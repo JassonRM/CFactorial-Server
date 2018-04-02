@@ -11,6 +11,6 @@ find_package(Boost COMPONENTS system REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 link_directories(${Boost_LIBRARY_DIR})
 
-add_executable(CFactorial_Server main.cpp)
+add_executable(CFactorial_Server main.cpp Server.cpp Server.h Session.cpp Session.h)
 
 target_link_libraries(CFactorial_Server ${Boost_SYSTEM_LIBRARY})
