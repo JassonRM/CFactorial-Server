@@ -7,6 +7,8 @@
 #include <boost/asio/write.hpp>
 #include <boost/asio/read.hpp>
 #include <boost/bind.hpp>
+#include <boost/asio.hpp>
+#include <rapidjson/document.h>
 
 #ifndef CFACTORIAL_SERVER_SESSION_H
 #define CFACTORIAL_SERVER_SESSION_H
@@ -22,8 +24,8 @@ public:
 
     Session(boost::asio::io_service *ioservice);
     void start();
-    void read_handler(const boost::system::error_code &ec);
-    void write_handler();
+    void read_handler(const boost::system::error_code &ec, std::size_t bytes_transferred);
+    void write_handler(const boost::system::error_code &ec, std::size_t bytes_transferred);
 };
 
 
