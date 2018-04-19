@@ -26,7 +26,6 @@ rapidjson::Document* MemoryManager::request(rapidjson::Document* jsonRequest) {
     if(requestType == "New Variable"){
         response = assign(jsonRequest);
     }
-
     std::cout<<"Memory after operation: "<<requestType<<std::endl;
     for(auto it = index.cbegin(); it != index.cend(); ++it){
         std::cout<<it->first<<" : "<<it->second.type + " " + it->second.identifier<<std::endl;
@@ -45,10 +44,9 @@ rapidjson::Document* MemoryManager::assign(rapidjson::Document *variable) {
     if(index.empty() and size > newVariable->size){
         saveValue(variable, 0, newVariable->type);
         index[0] = *newVariable;
-
     }else{
         for(std::map<int, Variable>::iterator it = index.begin(); it != index.end(); ++it){
-            if(std::next(it, 1)->first - (it->first + it->second.size) > newVariable->size || newVariable->size - (it->first + it->second.size) > newVariable->size){
+            if(std::next(it, 1)->first - (it->first + it->second.size) > newVariable->size || (std::next(it, 1) == index.end() && this->size - (it->first + it->second.size) > newVariable->size)){
                 saveValue(variable, it->first + it->second.size, newVariable->type);
                 index[it->first + it->second.size] = *newVariable;
                 break;
