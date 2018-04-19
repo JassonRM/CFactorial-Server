@@ -15,17 +15,38 @@
 
 using namespace boost::asio::ip;
 
+/**
+ * Servidor encargado de recibir conexiones
+ */
 class Server {
 private:
+    /**
+     * Servicio de entradas y salidas
+     */
     boost::asio::io_service  *ioservice;
+    /**
+     * Aceptor de conexiones TCP
+     */
     tcp::acceptor tcp_acceptor;
 
 
 public:
+    /**
+     * Constructor del servidor
+     * @param endpoint Direccion ip en la que va a escuchar
+     * @param io_service Servicio de entradas y salidas
+     */
     Server(const tcp::endpoint &endpoint, boost::asio::io_service *io_service);
+    /**
+     * Inicia proceso de escucha
+     */
     void start_accept();
+    /**
+     * Maneja las conexiones entrantes
+     * @param ec Codigo de error en la transferencia d edatos
+     * @param session Sesion de transferencia
+     */
     void accept_handler(const boost::system::error_code &ec, Session *session);
-
 };
 
 

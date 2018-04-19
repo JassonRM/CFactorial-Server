@@ -4,9 +4,12 @@
 
 #include <iostream>
 #include "Session.h"
+#include "MemoryManager.h"
 
 
-Session::Session(boost::asio::io_service *ioservice) : tcp_socket(*ioservice){}
+Session::Session(boost::asio::io_service *ioservice) : tcp_socket(*ioservice){
+    memoryManager = new MemoryManager(10240);
+}
 
 void Session::start() {
     std::cout<<"Conectado"<<std::endl;
@@ -16,13 +19,21 @@ void Session::start() {
 void Session::read_handler(const boost::system::error_code &ec, std::size_t bytes_transferred) {
     std::string request = "";
     rapidjson::Document jsonRequest;
-    request.append(bytes.data());
+    request.append(bytes);
+    std::cout<<"Request: " << bytes<<std::endl;
     jsonRequest.Parse(request.data());
     if(!ec){
         if(jsonRequest.IsObject()) {
-            //std::string response = memorymanager.analyze(jsonRequest);
-            std::string response = "Se ha recibido el mensaje: " + request;
-            boost::asio::async_write(tcp_socket, boost::asio::buffer(response),
+            rapidjson::Document* response = memoryManager->request(&jsonRequest);
+
+
+            rapidjson::StringBuffer buffer;
+            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+            response->Accept(writer);
+
+            std::string strResponse = buffer.GetString();
+
+            boost::asio::async_write(tcp_socket, boost::asio::buffer(strResponse),
                                      boost::bind(&Session::write_handler, this, boost::asio::placeholders::error,
                                                  boost::asio::placeholders::bytes_transferred));
         }
@@ -30,13 +41,15 @@ void Session::read_handler(const boost::system::error_code &ec, std::size_t byte
             tcp_socket.async_read_some(boost::asio::buffer(bytes), boost::bind(&Session::read_handler, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
         }
     }else{
-        std::cout<<"Datos recibidos formateados incorrectamente"<<std::endl;
+        tcp_socket.async_read_some(boost::asio::buffer(bytes), boost::bind(&Session::read_handler, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
     }
 }
 
 void Session::write_handler(const boost::system::error_code &ec, std::size_t bytes_transferred) {
     if(!ec){
-        std::cout<<"Escrito correctamente"<<std::endl;
+        std::cout<<"Request finalizado"<<std::endl;
+        bytes[0] = '\0';
+        tcp_socket.async_read_some(boost::asio::buffer(bytes), boost::bind(&Session::read_handler, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
     }else{
         std::cout<<"Error de escritura: "<<ec<<std::endl;
     }
