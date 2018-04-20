@@ -40,7 +40,10 @@ void Session::read_handler(const boost::system::error_code &ec, std::size_t byte
         else{
             tcp_socket.async_read_some(boost::asio::buffer(bytes), boost::bind(&Session::read_handler, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
         }
+    }else if(ec.value() == 2){
+        std::cout<<"Cliente desconectado"<<std::endl;
     }else{
+        std::cout<<"Codigo de error: "<<ec<<std::endl;
         tcp_socket.async_read_some(boost::asio::buffer(bytes), boost::bind(&Session::read_handler, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
     }
 }
@@ -48,7 +51,9 @@ void Session::read_handler(const boost::system::error_code &ec, std::size_t byte
 void Session::write_handler(const boost::system::error_code &ec, std::size_t bytes_transferred) {
     if(!ec){
         std::cout<<"Request finalizado\n"<<std::endl;
-        bytes[0] = '\0';
+        for(int b = 0; b < sizeof(bytes); b++) {
+            bytes[b] = '\0';
+        }
         tcp_socket.async_read_some(boost::asio::buffer(bytes), boost::bind(&Session::read_handler, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
     }else{
         std::cout<<"Error de escritura: "<<ec<<std::endl;

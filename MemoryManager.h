@@ -8,6 +8,7 @@
 #include <map>
 #include <string>
 #include <rapidjson/document.h>
+#include "StructContainer.h"
 #include "Variable.h"
 
 /**
@@ -26,11 +27,13 @@ private:
     /**
      * Indice con todas las variables almacenadas en memoria
      */
-    std::map<int, Variable> index;
+    std::map<int, Variable*> index;
     /**
      * Memoria RAM
      */
     char* memory;
+
+    std::map<std::string, StructContainer*> classes;
 
     /**
      * Asigna un espacio de memoria a una variable
@@ -38,6 +41,16 @@ private:
      * @return Resultado de la operacion
      */
     rapidjson::Document* assign(rapidjson::Document *variable);
+    rapidjson::Document* newStruct(rapidjson::Document *variable);
+    rapidjson::Document* defineStruct(rapidjson::Document *variable);
+    rapidjson::Document* getValue(rapidjson::Document *variable);
+    rapidjson::Document* changeValue(rapidjson::Document *variable);
+    rapidjson::Document* getAddress(rapidjson::Document *variable);
+    rapidjson::Document* getType(rapidjson::Document *variable);
+    rapidjson::Document* closeScope(rapidjson::Document *variable);
+    rapidjson::Document* exists(rapidjson::Document *variable);
+    rapidjson::Document* isStruct(rapidjson::Document *variable);
+
     /**
      * Guarda un valor en una direccion de memoria
      * @param variable Caracteristicas de la variable en formato JSON

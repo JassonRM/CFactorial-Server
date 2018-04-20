@@ -6,6 +6,7 @@
 #define CFACTORIAL_SERVER_VARIABLE_H
 
 #include <string>
+#include <stack>
 
 /**
  * Contenedor de las caracteristicas de la variable
@@ -27,7 +28,7 @@ public:
     /**
      * Cantidad de veces que es referencida
      */
-    int references;
+    std::stack<int> references;
 };
 
 #endif //CFACTORIAL_SERVER_VARIABLE_H
