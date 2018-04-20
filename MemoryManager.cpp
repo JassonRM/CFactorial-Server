@@ -307,6 +307,11 @@ rapidjson::Document* MemoryManager::newStruct(rapidjson::Document *variable) {
     for(std::map<int, MemberVariable*>::iterator it = structTemplate->variables.begin(); it != structTemplate->variables.end(); ++it){
         saveValue(it->second->defaultValue, structAddress + it->first, it->second->type);
     }
+    rapidjson::Document* response = new rapidjson::Document();
+    rapidjson::Document::AllocatorType& allocator = response->GetAllocator();
+    response->SetObject();
+    response->AddMember("Result", 1, allocator);
+    return response;
 }
 
 
