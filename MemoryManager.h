@@ -50,6 +50,8 @@ private:
     rapidjson::Document* closeScope(rapidjson::Document *variable);
     rapidjson::Document* exists(rapidjson::Document *variable);
     rapidjson::Document* isStruct(rapidjson::Document *variable);
+    rapidjson::Document* ramStatus(rapidjson::Document *variable);
+    rapidjson::Document* newReference(rapidjson::Document *variable);
 
     /**
      * Guarda un valor en una direccion de memoria

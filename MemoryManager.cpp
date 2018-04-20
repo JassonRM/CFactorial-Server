@@ -112,7 +112,7 @@ rapidjson::Document* MemoryManager::changeValue(rapidjson::Document *variable) {
 }
 
 rapidjson::Document* MemoryManager::getValue(rapidjson::Document *variable) {
-    if((*variable)["Struct"] != ""){
+    if((*variable)["Struct"].GetString() != ""){
         for (std::map<int, Variable*>::iterator it = index.begin(); it != index.end(); ++it) {
             if (it->second->identifier == (*variable)["Struct"].GetString()) {
 
@@ -157,6 +157,7 @@ rapidjson::Document* MemoryManager::getValue(rapidjson::Document *variable) {
             }
         }
     }else {
+        std::cout<<"Valor de una variable"<<std::endl;
         for (std::map<int, Variable*>::iterator it = index.begin(); it != index.end(); ++it) {
             if (it->second->identifier == (*variable)["Identifier"].GetString()) {
 
@@ -323,7 +324,51 @@ rapidjson::Document* MemoryManager::isStruct(rapidjson::Document *variable) {
     return response;
 }
 
+rapidjson::Document* MemoryManager::ramStatus(rapidjson::Document *variable) {
+    rapidjson::Document* response = new rapidjson::Document();
+    rapidjson::Document::AllocatorType& allocator = response->GetAllocator();
+    response->SetArray();
 
+    for(std::map<int, Variable*>::iterator it = index.begin(); it != index.end(); ++it){
+        rapidjson::Value entry;
+        entry.SetObject();
+
+        rapidjson::Value id(it->second->identifier.c_str(), it->second->identifier.size(), allocator);
+        entry.AddMember("Identifier", id, allocator);
+
+        entry.AddMember("Address", it->first, allocator);
+
+        entry.AddMember("References", (int) it->second->references.size(), allocator);
+
+        std::string type = it->second->type;
+        int address = it->first;
+
+        if (type == "int") {
+            int value = memory[address];
+            entry.AddMember("Value", value, allocator);
+        } else if (type == "long") {
+            int64_t value = memory[address];
+            entry.AddMember("Value", value, allocator);
+        } else if (type == "char") {
+            char value = memory[address];
+            entry.AddMember("Value", value, allocator);
+        } else if (type == "float") {
+            float value = memory[address];
+            entry.AddMember("Value", value, allocator);
+        } else if (type == "double") {
+            double value = memory[address];
+            entry.AddMember("Value", value, allocator);
+        } else if (type == "reference") {
+            int value = memory[address];
+            entry.AddMember("Value", value, allocator);
+        } else {
+            entry.AddMember("Value", ' ', allocator);
+        }
+
+//        response->PushBack(entry, allocator);
+
+    }
+}
 
 
 
