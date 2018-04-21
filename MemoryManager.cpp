@@ -197,15 +197,19 @@ rapidjson::Document* MemoryManager::getValue(rapidjson::Document *variable) {
 }
 
 rapidjson::Document* MemoryManager::getAddress(rapidjson::Document *variable) {
+    rapidjson::Document* response = new rapidjson::Document();
+    rapidjson::Document::AllocatorType& allocator = response->GetAllocator();
+    response->SetObject();
     for(std::map<int, Variable*>::iterator it = index.begin(); it != index.end(); ++it){
         if(it->second->identifier == (*variable)["Identifier"].GetString()){
-            rapidjson::Document* response = new rapidjson::Document();
-            rapidjson::Document::AllocatorType& allocator = response->GetAllocator();
-            response->SetObject();
             response->AddMember("Address", it->first, allocator);
+            rapidjson::Value value(it->second->type.c_str(), it->second->type.size(), allocator);
+            response->AddMember("Type", value, allocator);
             return response;
         }
     }
+    response->AddMember("Result", 0, allocator);
+    return response;
 }
 
 rapidjson::Document* MemoryManager::getType(rapidjson::Document *variable) {
