@@ -112,7 +112,11 @@ rapidjson::Document* MemoryManager::changeValue(rapidjson::Document *variable) {
 }
 
 rapidjson::Document* MemoryManager::getValue(rapidjson::Document *variable) {
-    if((*variable)["Struct"].GetString() != ""){
+    rapidjson::Document *response = new rapidjson::Document();
+    rapidjson::Document::AllocatorType &allocator = response->GetAllocator();
+    response->SetObject();
+
+    if(variable->HasMember("Struct")){
         for (std::map<int, Variable*>::iterator it = index.begin(); it != index.end(); ++it) {
             if (it->second->identifier == (*variable)["Struct"].GetString()) {
 
@@ -127,11 +131,6 @@ rapidjson::Document* MemoryManager::getValue(rapidjson::Document *variable) {
                         address += it->first;
                     }
                 }
-
-
-                rapidjson::Document *response = new rapidjson::Document();
-                rapidjson::Document::AllocatorType &allocator = response->GetAllocator();
-                response->SetObject();
 
                 if (type == "int") {
                     int value = memory[address];
@@ -156,17 +155,15 @@ rapidjson::Document* MemoryManager::getValue(rapidjson::Document *variable) {
                 return response;
             }
         }
+        response->AddMember("Result", 0, allocator);
+        return response;
     }else {
-        std::cout<<"Valor de una variable"<<std::endl;
         for (std::map<int, Variable*>::iterator it = index.begin(); it != index.end(); ++it) {
             if (it->second->identifier == (*variable)["Identifier"].GetString()) {
 
                 std::string type = it->second->type;
                 int address = it->first;
 
-                rapidjson::Document *response = new rapidjson::Document();
-                rapidjson::Document::AllocatorType &allocator = response->GetAllocator();
-                response->SetObject();
 
                 rapidjson::Value typeValue(type.c_str(), type.size(), allocator);
                 response->AddMember("Type", typeValue, allocator);
@@ -194,6 +191,8 @@ rapidjson::Document* MemoryManager::getValue(rapidjson::Document *variable) {
                 return response;
             }
         }
+        response->AddMember("Result", 0, allocator);
+        return response;
     }
 }
 
