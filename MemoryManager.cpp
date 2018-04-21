@@ -388,6 +388,7 @@ rapidjson::Document* MemoryManager::ramStatus(rapidjson::Document *variable) {
             StructInstance* structInstance = (StructInstance*) it->second;
             std::cout<<"Vacio? "<<structInstance->variables.empty()<<std::endl;
             response->PushBack(entry, allocator);
+            int prevAddr = 0;
             for(std::map<int, Variable>::iterator iter = structInstance->variables.begin(); iter != structInstance->variables.end(); ++iter){
                 std::cout<<"Imprimiendo los miembros"<<std::endl;
                 rapidjson::Value memberEntry;
@@ -397,7 +398,9 @@ rapidjson::Document* MemoryManager::ramStatus(rapidjson::Document *variable) {
                 rapidjson::Value id(identifier.c_str(), identifier.size(), allocator);
                 memberEntry.AddMember("Identifier", id, allocator);
 
-                memberEntry.AddMember("Address", address + std::prev(iter)->first, allocator);
+                memberEntry.AddMember("Address", address + prevAddr, allocator);
+
+                prevAddr += it->first;
 
                 memberEntry.AddMember("References", (int) iter->second.references.size(), allocator);
 
@@ -427,7 +430,7 @@ rapidjson::Document* MemoryManager::ramStatus(rapidjson::Document *variable) {
                     int value = memory[address + iter->first];
                     memberEntry.AddMember("Value", value, allocator);
                 }
-
+                std::cout<<identifier<<std::endl;
                 response->PushBack(memberEntry, allocator);
             }
             continue;
@@ -476,7 +479,6 @@ rapidjson::Document* MemoryManager::newReference(rapidjson::Document *variable) 
     }
 
 
-//    address->AddMember("Value", (*(getAddress(variable)))["Address"].GetInt(), addressAlloc);
 
     if(index.empty() and size > newVariable->size){
         saveValue(address, 0, "int");

@@ -20,7 +20,7 @@ void Session::read_handler(const boost::system::error_code &ec, std::size_t byte
     std::string request = "";
     rapidjson::Document jsonRequest;
     request.append(bytes);
-    std::cout<<"Request: " << bytes<<std::endl;
+//    std::cout<<"Request: " << bytes<<std::endl;
     jsonRequest.Parse(request.data());
     if(!ec){
         if(jsonRequest.IsObject()) {
