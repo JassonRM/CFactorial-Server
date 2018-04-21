@@ -33,6 +33,8 @@ void Session::read_handler(const boost::system::error_code &ec, std::size_t byte
 
             std::string strResponse = buffer.GetString();
 
+            std::cout<<strResponse<<std::endl;
+
             boost::asio::async_write(tcp_socket, boost::asio::buffer(strResponse),
                                      boost::bind(&Session::write_handler, this, boost::asio::placeholders::error,
                                                  boost::asio::placeholders::bytes_transferred));
