@@ -273,13 +273,6 @@ rapidjson::Document* MemoryManager::defineStruct(rapidjson::Document *variable) 
 
         newVariable->defaultValue = value;
 
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        value->Accept(writer);
-
-        std::cout<<buffer.GetString()<<std::endl;
-
-
         container->variables[container->size] = newVariable;
         container->size += newVariable->size;
     }
@@ -322,6 +315,7 @@ rapidjson::Document* MemoryManager::newStruct(rapidjson::Document *variable) {
 
 
     for(std::map<int, MemberVariable*>::iterator it = structTemplate->variables.begin(); it != structTemplate->variables.end(); ++it){ //Assertion failed
+        newStruct->variables[structAddress + it->first] = *it->second;
         saveValue(it->second->defaultValue, structAddress + it->first, it->second->type);
     }
     rapidjson::Document* response = new rapidjson::Document();
@@ -392,45 +386,51 @@ rapidjson::Document* MemoryManager::ramStatus(rapidjson::Document *variable) {
             std::cout<<"Hay un struct"<<std::endl;
             entry.AddMember("Value", "null", allocator);
             StructInstance* structInstance = (StructInstance*) it->second;
+            std::cout<<"Vacio? "<<structInstance->variables.empty()<<std::endl;
+            response->PushBack(entry, allocator);
             for(std::map<int, Variable>::iterator iter = structInstance->variables.begin(); iter != structInstance->variables.end(); ++iter){
                 std::cout<<"Imprimiendo los miembros"<<std::endl;
                 rapidjson::Value memberEntry;
                 memberEntry.SetObject();
 
-                rapidjson::Value id(iter->second.identifier.c_str(), iter->second.identifier.size(), allocator);
+                std::string identifier = it->second->identifier + "." + iter->second.identifier;
+                rapidjson::Value id(identifier.c_str(), identifier.size(), allocator);
                 memberEntry.AddMember("Identifier", id, allocator);
 
-                memberEntry.AddMember("Address", address + iter->first, allocator);
+                memberEntry.AddMember("Address", address + std::prev(iter)->first, allocator);
 
                 memberEntry.AddMember("References", (int) iter->second.references.size(), allocator);
 
-                std::string type = iter->second.type;
+                std::string mtype = iter->second.type;
 
-                rapidjson::Value jsonType(iter->second.type.c_str(), iter->second.identifier.size(), allocator);
+
+                rapidjson::Value jsonType(iter->second.type.c_str(), iter->second.type.size(), allocator);
                 memberEntry.AddMember("Type", jsonType, allocator);
 
-                if (type == "int") {
+                if (mtype == "int") {
                     int value = memory[address + iter->first];
-                    entry.AddMember("Value", value, allocator);
-                } else if (type == "long") {
+                    memberEntry.AddMember("Value", value, allocator);
+                    std::cout<<"Se anadio valor "<<value<<std::endl;
+                } else if (mtype == "long") {
                     int64_t value = memory[address + iter->first];
-                    entry.AddMember("Value", value, allocator);
-                } else if (type == "char") {
+                    memberEntry.AddMember("Value", value, allocator);
+                } else if (mtype == "char") {
                     char value = memory[address + iter->first];
-                    entry.AddMember("Value", value, allocator);
-                } else if (type == "float") {
+                    memberEntry.AddMember("Value", value, allocator);
+                } else if (mtype == "float") {
                     float value = memory[address + iter->first];
-                    entry.AddMember("Value", address + it->first, allocator);
-                } else if (type == "double") {
+                    memberEntry.AddMember("Value", value, allocator);
+                } else if (mtype == "double") {
                     double value = memory[address + iter->first];
-                    entry.AddMember("Value", value, allocator);
-                } else if (type == "reference") {
+                    memberEntry.AddMember("Value", value, allocator);
+                } else if (mtype == "reference") {
                     int value = memory[address + iter->first];
-                    entry.AddMember("Value", value, allocator);
+                    memberEntry.AddMember("Value", value, allocator);
                 }
 
                 response->PushBack(memberEntry, allocator);
             }
+            continue;
         }
 
         response->PushBack(entry, allocator);
