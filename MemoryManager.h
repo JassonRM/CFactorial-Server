@@ -31,7 +31,7 @@ private:
     /**
      * Memoria RAM
      */
-    char* memory;
+    unsigned char* memory;
 
     std::map<std::string, StructContainer*> classes;
 
@@ -52,6 +52,7 @@ private:
     rapidjson::Document* isStruct(rapidjson::Document *variable);
     rapidjson::Document* ramStatus(rapidjson::Document *variable);
     rapidjson::Document* newReference(rapidjson::Document *variable);
+    rapidjson::Document* reset();
 
     /**
      * Guarda un valor en una direccion de memoria

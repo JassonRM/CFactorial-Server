@@ -19,6 +19,6 @@ find_package(RapidJSON)
 include_directories(${RapidJSON_INCLUDE_DIR})
 link_directories(${RapidJSON_LIBRARY_DIR})
 
-add_executable(CFactorial_Server main.cpp Server.cpp Server.h Session.cpp Session.h MemoryManager.cpp MemoryManager.h Variable.h StructContainer.h StructInstance.h MemberVariable.h)
+add_executable(CFactorial_Server main.cpp Server.cpp Server.h Session.cpp Session.h MemoryManager.cpp MemoryManager.h Variable.h StructContainer.h StructInstance.h MemberVariable.h Reference.h)
 
 target_link_libraries(CFactorial_Server ${Boost_SYSTEM_LIBRARY})

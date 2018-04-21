@@ -5,9 +5,12 @@
 
 #include <iostream>
 #include <rapidjson/document.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 
 #include "MemoryManager.h"
 #include "StructInstance.h"
+#include "Reference.h"
 
 MemoryManager::MemoryManager(int size) {
     typeTable = std::map<std::string, int>();
@@ -18,7 +21,7 @@ MemoryManager::MemoryManager(int size) {
     typeTable["double"] = 8;
     typeTable["reference"] = 4;
     this->size = size;
-    memory = new char[size];
+    memory = new unsigned char[size];
 }
 
 rapidjson::Document* MemoryManager::request(rapidjson::Document* jsonRequest) {
@@ -42,6 +45,10 @@ rapidjson::Document* MemoryManager::request(rapidjson::Document* jsonRequest) {
         response = getType(jsonRequest);
     }else if(requestType == "Is Struct"){
         response  = isStruct(jsonRequest);
+    }else if(requestType == "RAM Status"){
+        response = ramStatus(jsonRequest);
+    }else if(requestType == "Reset"){
+        response = reset();
     }
     std::cout<<"Memory after operation: "<<requestType<<std::endl;
     for(auto it = index.cbegin(); it != index.cend(); ++it){
@@ -266,6 +273,12 @@ rapidjson::Document* MemoryManager::defineStruct(rapidjson::Document *variable) 
 
         newVariable->defaultValue = value;
 
+        rapidjson::StringBuffer buffer;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+        value->Accept(writer);
+
+        std::cout<<buffer.GetString()<<std::endl;
+
 
         container->variables[container->size] = newVariable;
         container->size += newVariable->size;
@@ -281,11 +294,11 @@ rapidjson::Document* MemoryManager::defineStruct(rapidjson::Document *variable) 
 }
 
 rapidjson::Document* MemoryManager::newStruct(rapidjson::Document *variable) {
-    std::cout<<"Creating struct----------------------"<<std::endl;
-
     StructInstance *newStruct = new StructInstance();
     newStruct->identifier = (*variable)["Identifier"].GetString();
     newStruct->type = (*variable)["Type"].GetString();
+
+
 
     StructContainer* structTemplate = classes.find(newStruct->type)->second;
 
@@ -307,7 +320,8 @@ rapidjson::Document* MemoryManager::newStruct(rapidjson::Document *variable) {
         }
     }
 
-    for(std::map<int, MemberVariable*>::iterator it = structTemplate->variables.begin(); it != structTemplate->variables.end(); ++it){
+
+    for(std::map<int, MemberVariable*>::iterator it = structTemplate->variables.begin(); it != structTemplate->variables.end(); ++it){ //Assertion failed
         saveValue(it->second->defaultValue, structAddress + it->first, it->second->type);
     }
     rapidjson::Document* response = new rapidjson::Document();
@@ -349,6 +363,10 @@ rapidjson::Document* MemoryManager::ramStatus(rapidjson::Document *variable) {
         entry.AddMember("References", (int) it->second->references.size(), allocator);
 
         std::string type = it->second->type;
+
+        rapidjson::Value jsonType(it->second->type.c_str(), it->second->type.size(), allocator);
+        entry.AddMember("Type", jsonType, allocator);
+
         int address = it->first;
 
         if (type == "int") {
@@ -371,17 +389,120 @@ rapidjson::Document* MemoryManager::ramStatus(rapidjson::Document *variable) {
             entry.AddMember("Value", value, allocator);
         } else {
             entry.AddMember("Value", ' ', allocator);
+            StructInstance* structInstance = (StructInstance*) it->second;
+            for(std::map<int, Variable>::iterator it = structInstance->variables.begin(); it != structInstance->variables.end(); ++it){
+                rapidjson::Value memberEntry;
+                memberEntry.SetObject();
+
+                rapidjson::Value id(it->second.identifier.c_str(), it->second.identifier.size(), allocator);
+                memberEntry.AddMember("Identifier", id, allocator);
+
+                memberEntry.AddMember("Address", address + it->first, allocator);
+
+                memberEntry.AddMember("References", (int) it->second.references.size(), allocator);
+
+                std::string type = it->second.type;
+
+                rapidjson::Value jsonType(it->second.type.c_str(), it->second.identifier.size(), allocator);
+                memberEntry.AddMember("Type", jsonType, allocator);
+
+                if (type == "int") {
+                    int value = memory[address + it->first];
+                    entry.AddMember("Value", value, allocator);
+                } else if (type == "long") {
+                    int64_t value = memory[address + it->first];
+                    entry.AddMember("Value", value, allocator);
+                } else if (type == "char") {
+                    char value = memory[address + it->first];
+                    entry.AddMember("Value", value, allocator);
+                } else if (type == "float") {
+                    float value = memory[address + it->first];
+                    entry.AddMember("Value", address + it->first, allocator);
+                } else if (type == "double") {
+                    double value = memory[address + it->first];
+                    entry.AddMember("Value", value, allocator);
+                } else if (type == "reference") {
+                    int value = memory[address + it->first];
+                    entry.AddMember("Value", value, allocator);
+                }
+
+                response->PushBack(entry, allocator);
+            }
         }
 
-//        response->PushBack(entry, allocator);
+        response->PushBack(entry, allocator);
 
     }
+
+    return response;
 }
 
+rapidjson::Document* MemoryManager::reset() {
+    index.clear();
 
+    for(int b = 0; b < sizeof(memory); b++) {
+        memory[b] = '\0';
+    }
 
+    classes.clear();
 
+    rapidjson::Document* response = new rapidjson::Document();
+    rapidjson::Document::AllocatorType& allocator = response->GetAllocator();
+    response->SetObject();
+    response->AddMember("Result", 1, allocator);
+    return response;
+}
 
+rapidjson::Document* MemoryManager::newReference(rapidjson::Document *variable) {
+    Reference *newVariable = new Reference();
+    newVariable->identifier = (*variable)["Identifier"].GetString();
+    newVariable->type = "Reference";
+    newVariable->subtype = (*variable)["Type"].GetString();
+    newVariable->size = 4;
+    newVariable->references.push((*variable)["Scope"].GetInt());
+
+    rapidjson::Document* address = new rapidjson::Document();
+    rapidjson::Document::AllocatorType& addressAlloc = address->GetAllocator();
+    address->SetObject();
+    address->AddMember("Value", (*(getAddress(variable)))["Address"].GetInt(), addressAlloc);
+
+    if(index.empty() and size > newVariable->size){
+        saveValue(address, 0, "int");
+        index[0] = newVariable;
+    }else{
+        for(std::map<int, Variable*>::iterator it = index.begin(); it != index.end(); ++it){
+            if(std::next(it, 1)->first - (it->first + it->second->size) > newVariable->size || (std::next(it, 1) == index.end() && this->size - (it->first + it->second->size) > newVariable->size)){
+                saveValue(address, it->first + it->second->size, "int");
+                index[it->first + it->second->size] = newVariable;
+                break;
+            }
+        }
+    }
+
+    rapidjson::Document* response = new rapidjson::Document();
+    rapidjson::Document::AllocatorType& allocator = response->GetAllocator();
+    response->SetObject();
+    response->AddMember("Result", 1, allocator);
+    return response;
+}
+
+rapidjson::Document* MemoryManager::closeScope(rapidjson::Document *variable) {
+    int scope = (*variable)["Scope"].GetInt();
+
+    for(std::map<int, Variable*>::iterator it = index.begin(); it != index.end(); ++it){
+        if(it->second->references.top() == scope){
+            it->second->references.pop();
+            if(it->second->references.empty()){
+                index.erase(it->first);
+            }
+        }
+    }
+    rapidjson::Document* response = new rapidjson::Document();
+    rapidjson::Document::AllocatorType& allocator = response->GetAllocator();
+    response->SetObject();
+    response->AddMember("Result", 1, allocator);
+    return response;
+}
 
 
 
