@@ -49,6 +49,8 @@ rapidjson::Document* MemoryManager::request(rapidjson::Document* jsonRequest) {
         response = ramStatus(jsonRequest);
     }else if(requestType == "Reset"){
         response = reset();
+    }else if(requestType == "Close Scope"){
+        response = closeScope(jsonRequest);
     }
     std::cout<<"Memory after operation: "<<requestType<<std::endl;
     for(auto it = index.cbegin(); it != index.cend(); ++it){
